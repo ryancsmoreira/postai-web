@@ -1,0 +1,24 @@
+{
+  "name": "postai-cloudflare",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev:api": "wrangler dev -c services/api/wrangler.toml --ip 0.0.0.0",
+    "dev:finance": "wrangler dev -c services/finance/wrangler.toml --ip 0.0.0.0",
+    "dev:ops": "wrangler dev -c services/ops/wrangler.toml --ip 0.0.0.0",
+    "deploy:api": "wrangler deploy -c services/api/wrangler.toml",
+    "deploy:finance": "wrangler deploy -c services/finance/wrangler.toml",
+    "deploy:ops": "wrangler deploy -c services/ops/wrangler.toml"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1032.0",
+    "@aws-sdk/s3-request-presigner": "^3.1032.0",
+    "hono": "^4.12.14",
+    "@supabase/supabase-js": "^2.43.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260418.1",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.83.0"
+  }
+}

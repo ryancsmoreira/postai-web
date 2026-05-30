@@ -1,0 +1,14 @@
+name = "postai-consumer-finance"
+main = "src/index.ts"
+compatibility_date = "2024-04-19"
+compatibility_flags = ["nodejs_compat"]
+
+# Bindings específicos para o fluxo financeiro
+# [[queues.consumers]]
+# queue = "postai-finance-queue"
+# max_batch_size = 10
+# max_batch_timeout = 30
+
+[vars]
+ENVIRONMENT = "development"
+PIX_PROVIDER = "PLACEHOLDER"

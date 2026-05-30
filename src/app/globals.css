@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #A3E635;
+  --color-brand-dark: #84CC16;
+  --color-brand-glow: rgba(163, 230, 53, 0.15);
+  --color-dark-bg: #0A0A0C;
+  --color-dark-card: #141418;
+  --color-dark-border: rgba(255, 255, 255, 0.08);
+  --color-dark-border-focus: rgba(163, 230, 53, 0.4);
+  
+  --font-sans: var(--font-outfit), var(--font-geist-sans), sans-serif;
+}
+
+:root {
+  --background: #0A0A0C;
+  --foreground: #F8FAFC;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Custom premium scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0A0A0C;
+}
+::-webkit-scrollbar-thumb {
+  background: #27272A;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #A3E635;
+}
+
+/* Glassmorphism custom classes */
+.glass-panel {
+  background: rgba(20, 20, 24, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: linear-gradient(135deg, rgba(20, 20, 24, 0.8) 0%, rgba(12, 12, 14, 0.9) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glow-glow {
+  box-shadow: 0 0 25px -5px rgba(163, 230, 53, 0.2), 0 0 15px -5px rgba(163, 230, 53, 0.1);
+}
+
+/* Pulse animation for record indicators */
+@keyframes recordPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.7;
+  }
+}
+
+.pulse-record {
+  animation: recordPulse 2s infinite ease-in-out;
+}
