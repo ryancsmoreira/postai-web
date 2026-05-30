@@ -18,6 +18,7 @@ type Bindings = {
   R2_BUCKET_NAME: string
   R2_PUBLIC_URL?: string
   RESEND_API_KEY: string
+  R2: R2Bucket
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -568,55 +569,58 @@ app.put('/v1/media/upload', async (c) => {
 
   if (!profileId) return c.json({ error: 'Não autorizado' }, 401)
 
-  const isR2Configured = c.env.R2_ACCESS_KEY_ID && c.env.R2_SECRET_ACCESS_KEY && c.env.R2_ENDPOINT && c.env.R2_BUCKET_NAME
-  if (!isR2Configured) {
-    return c.json({ error: 'R2 Storage não configurado.' }, 400)
+  if (!c.env.R2) {
+    return c.json({ error: 'R2 Bucket Binding não configurado no worker.' }, 500)
   }
-
-  const s3 = new S3Client({
-    region: 'auto',
-    endpoint: c.env.R2_ENDPOINT,
-    forcePathStyle: true,
-    credentials: {
-      accessKeyId: c.env.R2_ACCESS_KEY_ID,
-      secretAccessKey: c.env.R2_SECRET_ACCESS_KEY,
-    },
-  })
 
   const r2Key = `${prefix}/${fileName}`
 
   try {
-    // Gerar presigned URL server-side e fazer o PUT internamente (sem expor ao browser)
-    const command = new PutObjectCommand({
-      Bucket: c.env.R2_BUCKET_NAME,
-      Key: r2Key,
-      ContentType: contentType,
-    })
-    const presignedUrl = await getSignedUrl(s3, command, { expiresIn: 300 })
-
-    // PUT server-side: worker → R2 (sem CORS)
-    const r2Res = await fetch(presignedUrl, {
-      method: 'PUT',
-      headers: { 'Content-Type': contentType },
-      // @ts-ignore - duplex é necessário para streaming no Workers
-      duplex: 'half',
-      body: c.req.raw.body,
+    // PUT nativo do Cloudflare Worker para o R2 Bucket
+    await c.env.R2.put(r2Key, c.req.raw.body, {
+      httpMetadata: {
+        contentType: contentType,
+      }
     })
 
-    if (!r2Res.ok) {
-      const errText = await r2Res.text()
-      console.error('Erro no PUT para R2:', r2Res.status, errText)
-      return c.json({ error: 'Falha ao armazenar arquivo no R2', details: errText }, 500)
-    }
-
-    const publicUrl = c.env.R2_PUBLIC_URL
-      ? `${c.env.R2_PUBLIC_URL}/${r2Key}`
-      : `${c.env.R2_ENDPOINT}/${c.env.R2_BUCKET_NAME}/${r2Key}`
+    const publicUrl = `${new URL(c.req.url).origin}/v1/public/media/${prefix}/${fileName}`
 
     return c.json({ success: true, data: { r2Key, publicUrl } })
   } catch (err: any) {
-    console.error('Erro no upload proxy:', err.message)
+    console.error('Erro no upload proxy R2 binding:', err.message)
     return c.json({ error: 'Erro ao fazer upload para o R2', details: err.message }, 500)
+  }
+})
+
+/**
+ * [GET] /v1/public/media/:prefix/:fileName
+ * Rota pública para ler arquivos do R2 através do Worker
+ */
+app.get('/v1/public/media/:prefix/:fileName', async (c) => {
+  const prefix = c.req.param('prefix')
+  const fileName = c.req.param('fileName')
+  const r2Key = `${prefix}/${fileName}`
+
+  if (!c.env.R2) {
+    return c.text('R2 bucket binding não configurado', 500)
+  }
+
+  try {
+    const object = await c.env.R2.get(r2Key)
+    if (!object) {
+      return c.text('Arquivo não encontrado', 404)
+    }
+
+    const headers = new Headers()
+    object.writeHttpMetadata(headers)
+    headers.set('Access-Control-Allow-Origin', '*')
+    headers.set('Cache-Control', 'public, max-age=31536000')
+
+    return new Response(object.body, {
+      headers,
+    })
+  } catch (err: any) {
+    return c.text(`Erro ao buscar arquivo: ${err.message}`, 500)
   }
 })
 

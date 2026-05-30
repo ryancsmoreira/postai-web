@@ -12,9 +12,9 @@ ENVIRONMENT = "development"
 # binding = "DATABASE"
 # id = "PLACEHOLDER_ID"
 
-# [r2_buckets]
-# binding = "R2"
-# bucket_name = "postai-media"
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "media-postai"
 
 # [queues]
 # binding = "QUEUE"

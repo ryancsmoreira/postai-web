@@ -9,7 +9,7 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
-// .wrangler/tmp/bundle-roUl2u/checked-fetch.js
+// .wrangler/tmp/bundle-MJaaPK/checked-fetch.js
 function checkURL(request, init) {
   const url = request instanceof URL ? request : new URL(
     (typeof request === "string" ? new Request(request, init) : request).url
@@ -27,7 +27,7 @@ function checkURL(request, init) {
 }
 var urls;
 var init_checked_fetch = __esm({
-  ".wrangler/tmp/bundle-roUl2u/checked-fetch.js"() {
+  ".wrangler/tmp/bundle-MJaaPK/checked-fetch.js"() {
     "use strict";
     urls = /* @__PURE__ */ new Set();
     __name(checkURL, "checkURL");
@@ -374,11 +374,11 @@ var init_event_streams = __esm({
   }
 });
 
-// .wrangler/tmp/bundle-roUl2u/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-MJaaPK/middleware-loader.entry.ts
 init_checked_fetch();
 init_modules_watch_stub();
 
-// .wrangler/tmp/bundle-roUl2u/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-MJaaPK/middleware-insertion-facade.js
 init_checked_fetch();
 init_modules_watch_stub();
 
@@ -41207,44 +41207,44 @@ app.put("/v1/media/upload", async (c2) => {
   const fileName = c2.req.query("fileName") || `${Date.now()}.bin`;
   const contentType = c2.req.header("Content-Type") || "application/octet-stream";
   if (!profileId) return c2.json({ error: "N\xE3o autorizado" }, 401);
-  const isR2Configured = c2.env.R2_ACCESS_KEY_ID && c2.env.R2_SECRET_ACCESS_KEY && c2.env.R2_ENDPOINT && c2.env.R2_BUCKET_NAME;
-  if (!isR2Configured) {
-    return c2.json({ error: "R2 Storage n\xE3o configurado." }, 400);
+  if (!c2.env.R2) {
+    return c2.json({ error: "R2 Bucket Binding n\xE3o configurado no worker." }, 500);
   }
-  const s3 = new S3Client({
-    region: "auto",
-    endpoint: c2.env.R2_ENDPOINT,
-    forcePathStyle: true,
-    credentials: {
-      accessKeyId: c2.env.R2_ACCESS_KEY_ID,
-      secretAccessKey: c2.env.R2_SECRET_ACCESS_KEY
-    }
-  });
   const r2Key = `${prefix}/${fileName}`;
   try {
-    const command = new PutObjectCommand({
-      Bucket: c2.env.R2_BUCKET_NAME,
-      Key: r2Key,
-      ContentType: contentType
+    await c2.env.R2.put(r2Key, c2.req.raw.body, {
+      httpMetadata: {
+        contentType
+      }
     });
-    const presignedUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
-    const r2Res = await fetch(presignedUrl, {
-      method: "PUT",
-      headers: { "Content-Type": contentType },
-      // @ts-ignore - duplex é necessário para streaming no Workers
-      duplex: "half",
-      body: c2.req.raw.body
-    });
-    if (!r2Res.ok) {
-      const errText = await r2Res.text();
-      console.error("Erro no PUT para R2:", r2Res.status, errText);
-      return c2.json({ error: "Falha ao armazenar arquivo no R2", details: errText }, 500);
-    }
-    const publicUrl = c2.env.R2_PUBLIC_URL ? `${c2.env.R2_PUBLIC_URL}/${r2Key}` : `${c2.env.R2_ENDPOINT}/${c2.env.R2_BUCKET_NAME}/${r2Key}`;
+    const publicUrl = `${new URL(c2.req.url).origin}/v1/public/media/${prefix}/${fileName}`;
     return c2.json({ success: true, data: { r2Key, publicUrl } });
   } catch (err) {
-    console.error("Erro no upload proxy:", err.message);
+    console.error("Erro no upload proxy R2 binding:", err.message);
     return c2.json({ error: "Erro ao fazer upload para o R2", details: err.message }, 500);
+  }
+});
+app.get("/v1/public/media/:prefix/:fileName", async (c2) => {
+  const prefix = c2.req.param("prefix");
+  const fileName = c2.req.param("fileName");
+  const r2Key = `${prefix}/${fileName}`;
+  if (!c2.env.R2) {
+    return c2.text("R2 bucket binding n\xE3o configurado", 500);
+  }
+  try {
+    const object = await c2.env.R2.get(r2Key);
+    if (!object) {
+      return c2.text("Arquivo n\xE3o encontrado", 404);
+    }
+    const headers = new Headers();
+    object.writeHttpMetadata(headers);
+    headers.set("Access-Control-Allow-Origin", "*");
+    headers.set("Cache-Control", "public, max-age=31536000");
+    return new Response(object.body, {
+      headers
+    });
+  } catch (err) {
+    return c2.text(`Erro ao buscar arquivo: ${err.message}`, 500);
   }
 });
 app.get("/v1/media/upload-url", async (c2) => {
@@ -41872,7 +41872,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-roUl2u/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-MJaaPK/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -41906,7 +41906,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-roUl2u/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-MJaaPK/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
